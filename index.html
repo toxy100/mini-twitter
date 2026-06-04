@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mini Twitter</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="page-header">
+        <p class="eyebrow">Class feed</p>
+        <h1>Mini Twitter</h1>
+        <p class="intro">Latest posts from the 2026 final class stream.</p>
+      </header>
+
+      <section class="feed-panel" aria-labelledby="feed-title">
+        <div class="feed-heading">
+          <h2 id="feed-title">Recent Posts</h2>
+          <span class="badge">Newest first</span>
+        </div>
+
+        <p id="status" class="status" role="status">Loading posts...</p>
+        <div id="posts" class="posts" aria-live="polite"></div>
+      </section>
+    </main>
+  </body>
+</html>
