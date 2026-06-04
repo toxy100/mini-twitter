@@ -131,6 +131,10 @@ h1 {
   padding: 1rem;
 }
 
+.post-card.is-new {
+  animation: new-post-highlight 1.8s ease-out;
+}
+
 .post-meta {
   display: flex;
   align-items: baseline;
@@ -157,6 +161,27 @@ h1 {
   line-height: 1.55;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+@keyframes new-post-highlight {
+  0% {
+    border-color: rgba(15, 139, 141, 0.7);
+    background: #e8fbf8;
+    box-shadow: 0 0 0 4px rgba(15, 139, 141, 0.16);
+    transform: translateY(-4px);
+  }
+
+  55% {
+    border-color: rgba(15, 139, 141, 0.45);
+    background: #f2fffc;
+  }
+
+  100% {
+    border-color: var(--line);
+    background: var(--surface);
+    box-shadow: none;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 520px) {

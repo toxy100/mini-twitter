@@ -4,6 +4,7 @@ const CLASS_CODE = "2026-final";
 
 const postsEl = document.querySelector("#posts");
 const statusEl = document.querySelector("#status");
+let supabaseClient;
 
 function setStatus(message, type = "info") {
   statusEl.textContent = message;
@@ -37,9 +38,25 @@ function friendlyTime(value) {
   return date.toLocaleDateString();
 }
 
-function renderPost(post) {
+function getSupabaseClient() {
+  if (typeof supabase === "undefined") {
+    throw new Error("The Supabase library did not load.");
+  }
+
+  if (!supabaseClient) {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+
+  return supabaseClient;
+}
+
+function renderPost(post, isNew = false) {
   const card = document.createElement("article");
-  card.className = "post-card";
+  card.className = `post-card${isNew ? " is-new" : ""}`;
+
+  if (post.id) {
+    card.dataset.postId = post.id;
+  }
 
   const meta = document.createElement("div");
   meta.className = "post-meta";
@@ -67,14 +84,10 @@ async function loadPosts() {
   setStatus("Loading posts...");
 
   try {
-    if (typeof supabase === "undefined") {
-      throw new Error("The Supabase library did not load.");
-    }
-
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const { data, error } = await supabaseClient
+    const client = getSupabaseClient();
+    const { data, error } = await client
       .from("posts")
-      .select("author, body, created_at")
+      .select("id, author, body, created_at")
       .eq("class_code", CLASS_CODE)
       .order("created_at", { ascending: false })
       .limit(30);
@@ -91,7 +104,7 @@ async function loadPosts() {
     }
 
     setStatus("");
-    postsEl.append(...data.map(renderPost));
+    postsEl.append(...data.map((post) => renderPost(post)));
   } catch (error) {
     setStatus(
       `Could not load posts yet. Please check the Supabase table or permissions. Error: ${error.message}`,
@@ -100,4 +113,56 @@ async function loadPosts() {
   }
 }
 
+function addPostToTop(post) {
+  const alreadyRendered =
+    post.id &&
+    Array.from(postsEl.children).some((card) => card.dataset.postId === post.id);
+
+  if (alreadyRendered) {
+    return;
+  }
+
+  setStatus("");
+  postsEl.prepend(renderPost(post, true));
+
+  while (postsEl.children.length > 30) {
+    postsEl.lastElementChild.remove();
+  }
+}
+
+function subscribeToNewPosts() {
+  try {
+    const client = getSupabaseClient();
+
+    client
+      .channel("new-posts-2026-final")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "posts",
+          filter: `class_code=eq.${CLASS_CODE}`,
+        },
+        (payload) => {
+          addPostToTop(payload.new);
+        },
+      )
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") {
+          setStatus(
+            "Realtime updates are unavailable right now. The latest loaded posts are still shown.",
+            "error",
+          );
+        }
+      });
+  } catch (error) {
+    setStatus(
+      `Could not start realtime updates. Error: ${error.message}`,
+      "error",
+    );
+  }
+}
+
 loadPosts();
+subscribeToNewPosts();
